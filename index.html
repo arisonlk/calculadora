@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Direitos Trabalhistas CLT</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c8f564">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CLT Direitos">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<meta name="description" content="Calcule férias e rescisão trabalhista conforme a CLT. Funciona offline.">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+
+:root {
+  --bg:#0e0f11; --bg2:#161719; --bg3:#1e2024;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --accent:#c8f564; --accent2:#a8e040;
+  --text:#f0f0ee; --muted:#888885; --muted2:#5a5a57;
+  --danger:#ff6b5b; --warn:#ffb547; --info:#64b5f6;
+  --r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;}
+.noise{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:0.4;}
+
+/* ── Layout ── */
+.wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:40px 20px 100px;}
+
+/* ── Header ── */
+.header-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(200,245,100,0.1);border:0.5px solid rgba(200,245,100,0.3);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:500;color:var(--accent);margin-bottom:16px;letter-spacing:.04em;text-transform:uppercase;}
+.dot-live{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s ease infinite;}
+h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,40px);font-weight:800;line-height:1.1;letter-spacing:-.02em;}
+h1 span{color:var(--accent);}
+.subtitle{margin-top:10px;font-size:15px;color:var(--muted);max-width:480px;}
+
+/* ── Tab Nav ── */
+.tab-nav{display:flex;gap:4px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:5px;margin-bottom:28px;}
+.tab-btn{flex:1;padding:11px 16px;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;color:var(--muted);background:transparent;}
+.tab-btn.active{background:var(--accent);color:#0e0f11;}
+.tab-btn:not(.active):hover{background:var(--bg3);color:var(--text);}
+.tab-icon{font-size:15px;}
+
+/* ── Tab Panels ── */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;animation:fadeUp .4s ease both;}
+
+/* ── Form ── */
+.form-card{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;margin-bottom:16px;}
+.form-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:20px;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
+.field{display:flex;flex-direction:column;gap:6px;}
+label{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+input,select{background:var(--bg3);border:0.5px solid var(--border2);border-radius:10px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);outline:none;transition:border-color .2s;width:100%;}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,245,100,.08);}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer;}
+select option{background:var(--bg3);}
+.btn-calc{margin-top:24px;width:100%;padding:15px 24px;background:var(--accent);color:#0e0f11;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:.02em;cursor:pointer;transition:background .2s,transform .15s;}
+.btn-calc:hover{background:var(--accent2);transform:translateY(-1px);}
+.btn-calc:active{transform:translateY(0);}
+.btn-calc.danger{background:#ff6b5b;color:#fff;}
+.btn-calc.danger:hover{background:#e05545;}
+
+/* ── Results ── */
+.resultado{display:none;}
+.resultado.visible{display:block;animation:fadeUp .5s ease both;}
+.result-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;}
+.result-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;}
+.badge-pill{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;}
+.pill-ok{background:rgba(200,245,100,.12);color:var(--accent);border:0.5px solid rgba(200,245,100,.3);}
+.pill-warn{background:rgba(255,181,71,.12);color:var(--warn);border:0.5px solid rgba(255,181,71,.3);}
+.pill-danger{background:rgba(255,107,91,.12);color:var(--danger);border:0.5px solid rgba(255,107,91,.3);}
+.pill-info{background:rgba(100,181,246,.12);color:var(--info);border:0.5px solid rgba(100,181,246,.3);}
+.timeline-strip{display:flex;border-radius:12px;overflow:hidden;border:0.5px solid var(--border2);margin-bottom:20px;}
+.tl-seg{flex:1;padding:12px 14px;border-right:0.5px solid var(--border2);}
+.tl-seg:last-child{border-right:none;}
+.tl-date{font-size:11px;font-weight:500;opacity:.7;margin-bottom:2px;}
+.tl-label{font-size:12px;font-weight:500;}
+.resumo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;}
+.resumo-card{background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;}
+.resumo-num{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;}
+.resumo-lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+.section-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);margin:24px 0 10px;}
+.items-list{display:flex;flex-direction:column;gap:1px;margin-bottom:16px;}
+.item-row{background:var(--bg2);border:0.5px solid var(--border);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:border-color .2s;}
+.item-row:first-child{border-radius:12px 12px 0 0;}
+.item-row:last-child{border-radius:0 0 12px 12px;}
+.item-row:only-child{border-radius:12px;}
+.item-row:hover{border-color:var(--border2);}
+.item-left{flex:1;}
+.item-name{font-size:14px;font-weight:500;}
+.item-desc{font-size:12px;color:var(--muted);margin-top:2px;}
+.item-val{font-size:16px;font-weight:500;color:var(--accent);white-space:nowrap;}
+.item-val.neg{color:var(--danger);}
+.total-card{background:rgba(200,245,100,.06);border:1px solid rgba(200,245,100,.25);border-radius:14px;padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
+.total-card.red{background:rgba(255,107,91,.06);border-color:rgba(255,107,91,.25);}
+.total-label{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--accent);}
+.total-card.red .total-label{color:var(--danger);}
+.total-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.total-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent);}
+.total-card.red .total-val{color:var(--danger);}
+.alert-box{border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.5;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start;}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.al-warn{background:rgba(255,181,71,.08);border:0.5px solid rgba(255,181,71,.3);color:var(--warn);}
+.al-danger{background:rgba(255,107,91,.08);border:0.5px solid rgba(255,107,91,.3);color:var(--danger);}
+.al-info{background:rgba(100,181,246,.08);border:0.5px solid rgba(100,181,246,.25);color:var(--info);}
+.al-ok{background:rgba(200,245,100,.08);border:0.5px solid rgba(200,245,100,.25);color:var(--accent);}
+.btn-wpp{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:rgba(37,211,102,.1);border:0.5px solid rgba(37,211,102,.3);border-radius:12px;color:#25d366;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s;margin-top:8px;text-decoration:none;}
+.btn-wpp:hover{background:rgba(37,211,102,.18);}
+.btn-reset{display:block;width:100%;padding:12px;background:transparent;border:0.5px solid var(--border2);border-radius:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all .2s;margin-top:8px;}
+.btn-reset:hover{border-color:var(--border);color:var(--text);background:var(--bg2);}
+.divider{height:0.5px;background:var(--border);margin:24px 0;}
+
+/* Tipo rescisão chips */
+.tipo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:4px;}
+.tipo-chip{padding:10px 12px;border:0.5px solid var(--border2);border-radius:10px;background:var(--bg3);cursor:pointer;transition:all .2s;text-align:center;}
+.tipo-chip input[type=radio]{display:none;}
+.tipo-chip label{cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);display:block;}
+.tipo-chip.selected{border-color:var(--accent);background:rgba(200,245,100,.08);}
+.tipo-chip.selected label{color:var(--accent);}
+.tipo-chip .chip-emoji{display:block;font-size:20px;margin-bottom:4px;}
+.tipo-chip:hover:not(.selected){border-color:var(--border);background:var(--bg2);}
+
+/* ── PWA ── */
+@keyframes slideDown{from{transform:translateY(-100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+#install-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--bg2);border-bottom:0.5px solid rgba(200,245,100,.2);padding:12px 20px;align-items:center;gap:12px;backdrop-filter:blur(12px);animation:slideDown .4s ease;}
+#install-banner.show{display:flex;}
+.install-icon{width:40px;height:40px;border-radius:10px;background:rgba(200,245,100,.1);border:0.5px solid rgba(200,245,100,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.install-text{flex:1;}
+.install-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);}
+.install-sub{font-size:11px;color:var(--muted);}
+.btn-install{padding:8px 16px;background:var(--accent);border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#0e0f11;cursor:pointer;flex-shrink:0;transition:background .2s;}
+.btn-install:hover{background:var(--accent2);}
+.btn-dismiss{padding:8px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;flex-shrink:0;}
+.btn-dismiss:hover{color:var(--text);}
+#offline-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:1000;background:rgba(255,107,91,.12);border-top:0.5px solid rgba(255,107,91,.3);padding:10px 20px;text-align:center;font-size:13px;color:var(--danger);font-weight:500;}
+#offline-bar.show{display:block;}
+#update-bar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:999;background:var(--bg2);border-top:0.5px solid rgba(200,245,100,.25);padding:12px 20px;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);}
+#update-bar.show{display:flex;}
+.btn-update{padding:7px 14px;background:transparent;border:0.5px solid rgba(200,245,100,.4);border-radius:8px;color:var(--accent);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;}
+.btn-update:hover{background:rgba(200,245,100,.08);}
+@media(display-mode:standalone){.wrap{padding-top:24px;}#install-banner{display:none!important;}}
+
+/* ── Animations ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* ── Responsive ── */
+@media(max-width:480px){.form-grid{grid-template-columns:1fr;}.timeline-strip{flex-direction:column;}.tl-seg{border-right:none;border-bottom:0.5px solid var(--border2);}.tl-seg:last-child{border-bottom:none;}.tipo-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="noise"></div>
+
+<!-- PWA Install Banner -->
+<div id="install-banner">
+  <div class="install-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c8f564" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M12 14v4M10 16l2 2 2-2"/></svg></div>
+  <div class="install-text"><div class="install-title">Instalar no celular</div><div class="install-sub" id="install-sub-text">Use offline, sem internet</div></div>
+  <button class="btn-install" id="btn-install-pwa">Instalar</button>
+  <button class="btn-dismiss" id="btn-dismiss-banner">×</button>
+</div>
+<div id="offline-bar">Sem conexão — funcionando no modo offline</div>
+<div id="update-bar"><span>Nova versão disponível</span><button class="btn-update" id="btn-update">Atualizar agora</button></div>
+
+<div class="wrap">
+
+  <header style="margin-bottom:32px;animation:fadeUp .6s ease both;">
+    <div class="header-badge"><span class="dot-live"></span> Calculadora Trabalhista CLT</div>
+    <h1>Agente de <span>Direitos</span><br>Trabalhistas</h1>
+    <p class="subtitle">Calcule férias e rescisão conforme a legislação brasileira vigente.</p>
+  </header>
+
+  <!-- ── TAB NAV ── -->
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab('ferias')" id="tab-ferias" role="tab">
+      <span class="tab-icon">🏖️</span> Férias
+    </button>
+    <button class="tab-btn" onclick="switchTab('rescisao')" id="tab-rescisao" role="tab">
+      <span class="tab-icon">📄</span> Rescisão
+    </button>
+  </nav>
+
+  <!-- ════════════════════════════════════════
+       ABA 1 — FÉRIAS
+  ════════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-ferias">
+
+    <div class="form-card">
+      <div class="form-title">Dados das Férias</div>
+      <div class="form-grid">
+        <div class="field"><label>Salário bruto (R$)</label><input type="number" id="f_salario" value="2000" min="0" step="0.01" placeholder="2000.00"></div>
+        <div class="field"><label>Data de admissão</label><input type="date" id="f_admissao"></div>
+        <div class="field"><label>Início das férias</label><input type="date" id="f_inicio"></div>
+        <div class="field"><label>Último salário pago em</label><input type="date" id="f_ultimo_sal"></div>
+        <div class="field"><label>Dias de férias</label>
+          <select id="f_dias"><option value="30">30 dias (integral)</option><option value="20">20 dias</option><option value="15">15 dias</option><option value="10">10 dias</option></select>
+        </div>
+        <div class="field"><label>Férias pendentes (anos ant.)</label><input type="number" id="f_pendentes" value="0" min="0" max="30"></div>
+        <div class="field"><label>Abono pecuniário (vender 10 dias)?</label>
+          <select id="f_abono"><option value="nao">Não</option><option value="sim">Sim</option></select>
+        </div>
+        <div class="field"><label>Adicional noturno?</label>
+          <select id="f_noturno"><option value="nao">Não</option><option value="sim">Sim (+25%)</option></select>
+        </div>
+      </div>
+      <button class="btn-calc" onclick="calcularFerias()">Calcular Férias</button>
+    </div>
+
+    <div class="resultado" id="res-ferias">
+      <div class="result-header">
+        <span class="result-title">Resultado — Férias</span>
+        <span id="f_prazo_badge" class="badge-pill"></span>
+      </div>
+      <div class="timeline-strip" id="f_timeline"></div>
+      <div class="resumo-grid" id="f_resumo"></div>
+      <div id="f_alertas"></div>
+      <div class="section-label">Composição do pagamento</div>
+      <div class="items-list" id="f_items"></div>
+      <div class="total-card"><div><div class="total-label">Total a receber</div><div class="total-sub" id="f_total_sub"></div></div><div class="total-val" id="f_total_val"></div></div>
+      <div id="f_alertas2"></div>
+      <div class="section-label">Férias pendentes</div>
+      <div id="f_pendentes_block"></div>
+      <div class="divider"></div>
+      <a id="f_wpp" class="btn-wpp" href="#" target="_blank"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Enviar por WhatsApp</a>
+      <button class="btn-reset" onclick="resetar('ferias')">Fazer novo cálculo</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       ABA 2 — RESCISÃO
+  ════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-rescisao">
+
+    <div class="form-card">
+      <div class="form-title">Tipo de Rescisão</div>
+      <div class="tipo-grid" id="tipo-grid">
+        <div class="tipo-chip selected" onclick="selecionarTipo('sem_justa')">
+          <input type="radio" name="tipo" id="t1" value="sem_justa" checked>
+          <label for="t1"><span class="chip-emoji">🔴</span>Demissão sem justa causa</label>
+        </div>
+        <div class="tipo-chip" onclick="selecionarTipo('com_justa')">
+          <input type="radio" name="tipo" id="t2" value="com_justa">
+          <label for="t2"><span class="chip-emoji">⚠️</span>Demissão por justa causa</label>
+        </div>
+        <div class="tipo-chip" onclick="selecionarTipo('pedido')">
+          <input type="radio" name="tipo" id="t3" value="pedido">
+          <label for="t3"><span class="chip-emoji">👋</span>Pedido de demissão</label>
+        </div>
+        <div class="tipo-chip" onclick="selecionarTipo('acordo')">
+          <input type="radio" name="tipo" id="t4" value="acordo">
+          <label for="t4"><span class="chip-emoji">🤝</span>Acordo mútuo</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-title">Dados da Rescisão</div>
+      <div class="form-grid">
+        <div class="field"><label>Salário bruto (R$)</label><input type="number" id="r_salario" value="2000" min="0" step="0.01"></div>
+        <div class="field"><label>Data de admissão</label><input type="date" id="r_admissao"></div>
+        <div class="field"><label>Data de demissão</label><input type="date" id="r_demissao"></div>
+        <div class="field"><label>Último salário pago em</label><input type="date" id="r_ultimo_sal"></div>
+        <div class="field"><label>Férias vencidas não gozadas?</label>
+          <select id="r_ferias_vencidas"><option value="nao">Não</option><option value="sim">Sim (30 dias)</option></select>
+        </div>
+        <div class="field"><label>Aviso prévio</label>
+          <select id="r_aviso"><option value="trabalhado">Trabalhado (30 dias)</option><option value="indenizado">Indenizado pela empresa</option><option value="dispensado">Dispensado pelo trabalhador</option></select>
+        </div>
+        <div class="field"><label>Adicional de insalubridade?</label>
+          <select id="r_insalubridade"><option value="nao">Não</option><option value="min">Sim — 10% (mínimo)</option><option value="med">Sim — 20% (médio)</option><option value="max">Sim — 40% (máximo)</option></select>
+        </div>
+        <div class="field"><label>Horas extras mensais (média)</label><input type="number" id="r_he" value="0" min="0" placeholder="0"></div>
+      </div>
+      <button class="btn-calc danger" onclick="calcularRescisao()">Calcular Rescisão</button>
+    </div>
+
+    <div class="resultado" id="res-rescisao">
+      <div class="result-header">
+        <span class="result-title">Resultado — Rescisão</span>
+        <span id="r_tipo_badge" class="badge-pill"></span>
+      </div>
+      <div class="timeline-strip" id="r_timeline"></div>
+      <div class="resumo-grid" id="r_resumo"></div>
+      <div id="r_alertas"></div>
+      <div class="section-label">Verbas rescisórias</div>
+      <div class="items-list" id="r_items_rec"></div>
+      <div class="total-card" id="r_total_rec_card">
+        <div><div class="total-label" id="r_total_rec_label">Total a Receber</div><div class="total-sub">Verbas rescisórias brutas</div></div>
+        <div class="total-val" id="r_total_rec_val"></div>
+      </div>
+      <div id="r_deducoes_block"></div>
+      <div class="section-label" id="r_label_liquido">Valor líquido estimado</div>
+      <div class="total-card" id="r_total_liq_card">
+        <div><div class="total-label">Líquido a receber</div><div class="total-sub">Após deduções de INSS e IR estimados</div></div>
+        <div class="total-val" id="r_total_liq_val"></div>
+      </div>
+      <div id="r_fgts_block"></div>
+      <div id="r_alertas2"></div>
+      <div class="divider"></div>
+      <a id="r_wpp" class="btn-wpp" href="#" target="_blank"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Enviar por WhatsApp</a>
+      <button class="btn-reset" onclick="resetar('rescisao')">Fazer novo cálculo</button>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+// ── UTILS ──────────────────────────────────────────────────────────
+const fmt = v => 'R$ ' + Math.abs(v).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const diasDiff = (d1,d2) => Math.round((d2-d1)/(1000*60*60*24));
+const addDias = (d,n) => { const r=new Date(d); r.setDate(r.getDate()+n); return r; };
+const fmtD = d => d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+const parseD = s => new Date(s+'T12:00:00');
+const el = id => document.getElementById(id);
+
+// INSS 2025 tabela progressiva
+function calcINSS(sal) {
+  const faixas = [[1518,0.075],[2693.40,0.09],[4045.67,0.12],[7786.02,0.14]];
+  let inss = 0, ant = 0;
+  for(const [teto,aliq] of faixas){
+    if(sal <= 0) break;
+    const base = Math.min(sal, teto) - ant;
+    inss += base * aliq;
+    ant = teto;
+    if(sal <= teto) break;
+  }
+  return Math.min(inss, 7786.02*0.14);
+}
+
+// IR simplificado sobre rescisão (tabela progressiva 2025)
+function calcIR(base) {
+  if(base <= 2259.20) return 0;
+  if(base <= 2826.65) return base*0.075 - 169.44;
+  if(base <= 3751.05) return base*0.15  - 381.44;
+  if(base <= 4664.68) return base*0.225 - 662.77;
+  return base*0.275 - 896.00;
+}
+
+// ── TAB SWITCH ─────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['ferias','rescisao'].forEach(t => {
+    el('panel-'+t).classList.toggle('active', t===tab);
+    el('tab-'+t).classList.toggle('active', t===tab);
+  });
+}
+
+// ── TIPO RESCISÃO ──────────────────────────────────────────────────
+let tipoRescisao = 'sem_justa';
+function selecionarTipo(tipo) {
+  tipoRescisao = tipo;
+  document.querySelectorAll('.tipo-chip').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  // Mostrar/ocultar campos relevantes
+  const aviso = el('r_aviso');
+  if(tipo === 'com_justa') {
+    aviso.value = 'dispensado'; aviso.disabled = true;
+  } else if(tipo === 'pedido') {
+    aviso.disabled = false;
+  } else {
+    aviso.disabled = false;
+  }
+}
+
+// ── PRÉ-PREENCHER DATAS ─────────────────────────────────────────────
+el('f_admissao').value = '2024-04-15';
+el('f_inicio').value   = '2025-05-04';
+el('f_ultimo_sal').value = '2025-04-15';
+el('r_admissao').value = '2024-04-15';
+el('r_demissao').value = '2025-05-03';
+el('r_ultimo_sal').value = '2025-04-15';
+
+// ══════════════════════════════════════════════════════════════════
+//  CÁLCULO DE FÉRIAS
+// ══════════════════════════════════════════════════════════════════
+function calcularFerias() {
+  const sal   = parseFloat(el('f_salario').value)||0;
+  const adm   = parseD(el('f_admissao').value);
+  const inicio= parseD(el('f_inicio').value);
+  const ultSal= parseD(el('f_ultimo_sal').value);
+  const diasF = parseInt(el('f_dias').value);
+  const pend  = parseInt(el('f_pendentes').value)||0;
+  const abono = el('f_abono').value==='sim';
+  const noturno=el('f_noturno').value==='sim';
+
+  if(!sal||isNaN(adm)||isNaN(inicio)||isNaN(ultSal)){alert('Preencha todos os campos.');return;}
+
+  const dv = sal/30;
+  const inicioSaldo = addDias(ultSal,1);
+  const fimSaldo    = addDias(inicio,-1);
+  const diasSaldo   = Math.max(0, diasDiff(inicioSaldo,fimSaldo)+1);
+  const vlSaldo  = dv*diasSaldo;
+  const vlFerias = dv*diasF;
+  const vlTerco  = vlFerias/3;
+  const vlAbono  = abono ? (dv*10)+(dv*10/3) : 0;
+  const diasFruidos = abono ? diasF-10 : diasF;
+  const vlNoturno= noturno ? vlFerias*0.25 : 0;
+  const total    = vlSaldo+vlFerias+vlTerco+vlAbono+vlNoturno;
+  const prazoLegal = addDias(inicio,-2);
+  const hoje = new Date(); hoje.setHours(12,0,0,0);
+  const diasPrazo = diasDiff(hoje,prazoLegal);
+  const retorno  = addDias(inicio,diasFruidos);
+  const mesesTrab= Math.floor(diasDiff(adm,inicio)/30.44);
+  const mesesAno = Math.min(mesesTrab%12||12,12);
+  const vl13 = (sal/12)*mesesAno;
+  const vlFGTS = sal*0.085*Math.min(mesesTrab,12);
+
+  // Badge prazo
+  const b = el('f_prazo_badge');
+  if(diasPrazo<0){b.className='badge-pill pill-danger';b.textContent='Prazo vencido!';}
+  else if(diasPrazo<=3){b.className='badge-pill pill-warn';b.textContent=`Pagar em ${diasPrazo} dia(s)!`;}
+  else{b.className='badge-pill pill-ok';b.textContent=`Pagar até ${fmtD(prazoLegal)}`;}
+
+  // Timeline
+  el('f_timeline').innerHTML=`
+    <div class="tl-seg" style="background:rgba(255,255,255,.03)"><div class="tl-date">Último pagamento</div><div class="tl-label">${fmtD(ultSal)}</div></div>
+    <div class="tl-seg" style="background:rgba(255,181,71,.07)"><div class="tl-date" style="color:var(--warn)">${diasSaldo} dias trabalhados</div><div class="tl-label" style="color:var(--warn)">${fmtD(inicioSaldo)} → ${fmtD(fimSaldo)}</div></div>
+    <div class="tl-seg" style="background:rgba(200,245,100,.07)"><div class="tl-date" style="color:var(--accent)">Início férias</div><div class="tl-label" style="color:var(--accent)">${fmtD(inicio)}</div></div>
+    <div class="tl-seg" style="background:rgba(100,181,246,.07)"><div class="tl-date" style="color:var(--info)">Retorno</div><div class="tl-label" style="color:var(--info)">${fmtD(retorno)}</div></div>`;
+
+  // Resumo
+  el('f_resumo').innerHTML=`
+    <div class="resumo-card"><div class="resumo-num">${diasSaldo}</div><div class="resumo-lbl">dias de saldo</div></div>
+    <div class="resumo-card"><div class="resumo-num">${diasFruidos}</div><div class="resumo-lbl">dias de descanso</div></div>
+    <div class="resumo-card"><div class="resumo-num">${mesesAno}</div><div class="resumo-lbl">meses p/ 13º</div></div>
+    <div class="resumo-card"><div class="resumo-num">${pend}</div><div class="resumo-lbl">dias pendentes</div></div>`;
+
+  // Alertas
+  let al='';
+  if(diasPrazo<0) al+=`<div class="alert-box al-danger"><span class="alert-icon">⚠</span><div>Prazo legal já venceu! Pagamento deveria ter sido feito em <strong>${fmtD(prazoLegal)}</strong>. A empresa pode ser obrigada a pagar em <strong>dobro</strong>.</div></div>`;
+  else if(diasPrazo<=3) al+=`<div class="alert-box al-warn"><span class="alert-icon">⏰</span><div>Faltam <strong>${diasPrazo} dia(s)</strong> para o prazo legal (<strong>${fmtD(prazoLegal)}</strong>).</div></div>`;
+  else al+=`<div class="alert-box al-ok"><span class="alert-icon">✓</span><div>Pagamento deve ser feito até <strong>${fmtD(prazoLegal)}</strong> — ${diasPrazo} dias a partir de hoje.</div></div>`;
+  el('f_alertas').innerHTML=al;
+
+  // Items
+  let items=[
+    {n:'Saldo de salário',d:`${diasSaldo} dias (${fmtD(inicioSaldo)} a ${fmtD(fimSaldo)})`,v:vlSaldo},
+    {n:`Férias (${diasF} dias)`,d:'Período de descanso pago integralmente',v:vlFerias},
+    {n:'1/3 constitucional',d:'Bônus obrigatório por lei sobre as férias',v:vlTerco},
+  ];
+  if(abono) items.push({n:'Abono pecuniário (10 dias)',d:'Venda de 1/3 das férias + 1/3 constitucional',v:vlAbono});
+  if(noturno) items.push({n:'Adicional noturno',d:'25% sobre férias por trabalho noturno',v:vlNoturno});
+  el('f_items').innerHTML=items.map(i=>`<div class="item-row"><div class="item-left"><div class="item-name">${i.n}</div><div class="item-desc">${i.d}</div></div><div class="item-val">${fmt(i.v)}</div></div>`).join('');
+
+  el('f_total_val').textContent=fmt(total);
+  el('f_total_sub').textContent=`Pagar em depósito único até ${fmtD(prazoLegal)}`;
+
+  el('f_alertas2').innerHTML=`<div class="alert-box al-info"><span class="alert-icon">ℹ</span><div>
+    <strong>13º salário estimado</strong> (${mesesAno} meses): ${fmt(vl13)} — pago em nov/dez.<br>
+    <strong>FGTS acumulado</strong> (estimativa 12 meses): ${fmt(vlFGTS)} — disponível na Caixa.
+  </div></div>`;
+
+  // Pendentes
+  let ph='';
+  if(pend>0){
+    const venc=mesesTrab>12;
+    ph=`<div class="alert-box ${venc?'al-danger':'al-warn'}"><span class="alert-icon">${venc?'⚠':'!'}</span><div>
+      Restam <strong>${pend} dias de férias pendentes</strong>.
+      ${venc?'<br><strong>Férias vencidas!</strong> Devem ser pagas em dobro se não gozadas.':'<br>Agende com a empresa o quanto antes.'}
+      <br>Estimativa: <strong>${fmt(dv*pend*(venc?2:1))}</strong>${venc?' (em dobro)':''}.
+    </div></div>`;
+  } else {
+    ph=`<div class="alert-box al-ok"><span class="alert-icon">✓</span><div>Sem férias pendentes de períodos anteriores.</div></div>`;
+  }
+  el('f_pendentes_block').innerHTML=ph;
+
+  // WhatsApp
+  const msg=`*Cálculo de Férias — ${fmtD(inicio)}*\n\n*Pagar até ${fmtD(prazoLegal)}:*\n`+
+    `• Saldo de salário (${diasSaldo} dias): ${fmt(vlSaldo)}\n`+
+    `• Férias (${diasF} dias): ${fmt(vlFerias)}\n`+
+    `• 1/3 constitucional: ${fmt(vlTerco)}\n`+
+    (abono?`• Abono pecuniário: ${fmt(vlAbono)}\n`:'')+
+    (noturno?`• Adicional noturno: ${fmt(vlNoturno)}\n`:'')+
+    `\n✅ *Total: ${fmt(total)}*\n\nRetorno: ${fmtD(retorno)}`+
+    (pend>0?`\n\n⚠ Férias pendentes: *${pend} dias* a agendar.`:'');
+  el('f_wpp').href='https://wa.me/?text='+encodeURIComponent(msg);
+
+  el('res-ferias').classList.add('visible');
+  el('res-ferias').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  CÁLCULO DE RESCISÃO
+// ══════════════════════════════════════════════════════════════════
+function calcularRescisao() {
+  const sal      = parseFloat(el('r_salario').value)||0;
+  const adm      = parseD(el('r_admissao').value);
+  const demissao = parseD(el('r_demissao').value);
+  const ultSal   = parseD(el('r_ultimo_sal').value);
+  const feriasVenc = el('r_ferias_vencidas').value==='sim';
+  const aviso    = el('r_aviso').value;
+  const insalVal = el('r_insalubridade').value;
+  const hExtras  = parseFloat(el('r_he').value)||0;
+  const tipo     = tipoRescisao;
+
+  if(!sal||isNaN(adm)||isNaN(demissao)||isNaN(ultSal)){alert('Preencha todos os campos.');return;}
+
+  const dv       = sal/30;
+  const diasTrab = diasDiff(adm,demissao);
+  const mesesTrab= Math.floor(diasTrab/30.44);
+  const anosComp = Math.floor(diasTrab/365);
+
+  // Saldo de salário
+  const inicioSaldo = addDias(ultSal,1);
+  const diasSaldo   = Math.max(0, diasDiff(inicioSaldo,demissao)+1);
+  const vlSaldo     = dv*diasSaldo;
+
+  // Insalubridade
+  const smAtual = 1518;
+  const insalMap = {nao:0, min:smAtual*0.10, med:smAtual*0.20, max:smAtual*0.40};
+  const vlInsalubridade = insalMap[insalVal];
+  const salBase = sal + vlInsalubridade;
+  const dvBase  = salBase/30;
+
+  // Horas extras
+  const vlHE = hExtras>0 ? (salBase/220)*1.5*hExtras : 0;
+  const salTotal = salBase + vlHE;
+
+  // Meses no ano (para 13º proporcional)
+  const mesAdm    = adm.getMonth();
+  const mesDem    = demissao.getMonth();
+  const anoAdm    = adm.getFullYear();
+  const anoDem    = demissao.getFullYear();
+  let meses13 = 0;
+  if(anoDem > anoAdm) { meses13 = mesDem+1; }
+  else { meses13 = mesDem - mesAdm + 1; }
+  meses13 = Math.min(Math.max(meses13,1),12);
+  // Considerar fração > 15 dias no mês
+  const diaDeAdm = demissao.getDate();
+  if(diaDeAdm < 15) meses13 = Math.max(meses13-1,0);
+
+  // Verbas conforme tipo
+  let items=[], vlFGTSMulta=0, vlFGTSAcum=0, temSeguro=false, vlAvisoInd=0;
+
+  // FGTS acumulado
+  vlFGTSAcum = salBase*0.085*Math.min(mesesTrab,mesesTrab);
+
+  // 13º proporcional
+  const vl13 = (salBase/12)*meses13;
+
+  // Férias proporcionais + 1/3
+  const mesesFerias = Math.min(Math.floor((diasDiff(adm, demissao) % 365)/30.44),11)+1;
+  const vlFeriasP   = (salBase/12)*mesesFerias;
+  const vlTercoP    = vlFeriasP/3;
+
+  // Férias vencidas (não gozadas)
+  const vlFeriasVenc = feriasVenc ? salBase + salBase/3 : 0;
+
+  // Aviso prévio
+  // Cálculo: 30 dias + 3 dias por ano completo (max 90 total) — art. 487 CLT
+  const diasAviso = Math.min(30 + anosComp*3, 90);
+  vlAvisoInd = tipo==='sem_justa' && aviso==='indenizado' ? (salBase/30)*diasAviso : 0;
+
+  // Multa FGTS
+  if(tipo==='sem_justa') { vlFGTSMulta=vlFGTSAcum*0.50; temSeguro=true; }       // 40% + 10% governo = 50% bruto p/ trabalhador vê 40%
+  else if(tipo==='acordo') { vlFGTSMulta=vlFGTSAcum*0.20; temSeguro=false; }    // 20%
+  else { vlFGTSMulta=0; }
+
+  // Montar itens conforme tipo
+  const direitoSaldo    = true;
+  const direito13       = tipo!=='com_justa';
+  const direitoFeriasP  = tipo!=='com_justa';
+  const direitoFeriasV  = true; // férias vencidas sempre
+  const direitoAviso    = tipo!=='com_justa';
+  const direitoFGTSMul  = tipo==='sem_justa'||tipo==='acordo';
+
+  if(direitoSaldo)   items.push({n:'Saldo de salário',d:`${diasSaldo} dias trabalhados após último pagamento`,v:vlSaldo,ok:true});
+  if(direito13)      items.push({n:'13º salário proporcional',d:`${meses13}/${tipo==='acordo'?'12 (reduzido a 50%)':'12'} avos`,v:tipo==='acordo'?vl13*0.5:vl13,ok:true});
+  if(direitoFeriasP) items.push({n:'Férias proporcionais',d:`${mesesFerias} meses — não gozadas`,v:vlFeriasP,ok:true});
+  if(direitoFeriasP) items.push({n:'1/3 sobre férias proporcionais',d:'Bônus constitucional obrigatório',v:vlTercoP,ok:true});
+  if(feriasVenc)     items.push({n:'Férias vencidas + 1/3',d:'30 dias não gozados do período anterior',v:vlFeriasVenc,ok:true});
+  if(direitoAviso && aviso==='indenizado') items.push({n:`Aviso prévio indenizado (${diasAviso} dias)`,d:`30 dias + ${anosComp}×3 dias por ano trabalhado`,v:vlAvisoInd,ok:true});
+  if(vlHE>0)         items.push({n:'Horas extras (média mensal)',d:`${hExtras}h × 150% por mês`,v:vlHE,ok:true});
+  if(vlInsalubridade>0) items.push({n:'Insalubridade acumulada',d:`${insalVal==='min'?'10%':insalVal==='med'?'20%':'40%'} s/ salário mínimo`,v:vlInsalubridade*(diasSaldo/30),ok:true});
+
+  // Itens que NÃO tem direito (para mostrar o que perde)
+  const itensPerdidos=[];
+  if(!direito13)     itensPerdidos.push('13º salário proporcional');
+  if(!direitoFeriasP)itensPerdidos.push('Férias proporcionais + 1/3');
+  if(!temSeguro)     itensPerdidos.push('Seguro-desemprego');
+  if(!direitoFGTSMul)itensPerdidos.push('Multa de 40% sobre FGTS');
+
+  const totalBruto = items.reduce((a,i)=>a+i.v,0);
+
+  // Deduções
+  const inss = calcINSS(totalBruto);
+  const baseIR = totalBruto - inss;
+  const ir = calcIR(baseIR);
+  const totalLiq = totalBruto - inss - ir;
+
+  // Badge tipo
+  const tipoMap={sem_justa:['pill-danger','Demitido sem justa causa'],com_justa:['pill-warn','Justa causa'],pedido:['pill-info','Pedido de demissão'],acordo:['pill-ok','Acordo mútuo']};
+  const [tc,tl]=tipoMap[tipo];
+  el('r_tipo_badge').className='badge-pill '+tc;
+  el('r_tipo_badge').textContent=tl;
+
+  // Timeline
+  el('r_timeline').innerHTML=`
+    <div class="tl-seg" style="background:rgba(255,255,255,.03)"><div class="tl-date">Admissão</div><div class="tl-label">${fmtD(adm)}</div></div>
+    <div class="tl-seg" style="background:rgba(255,181,71,.07)"><div class="tl-date" style="color:var(--warn)">${mesesTrab} meses</div><div class="tl-label" style="color:var(--warn)">${anosComp} ano${anosComp!==1?'s':''} completo${anosComp!==1?'s':''}</div></div>
+    <div class="tl-seg" style="background:rgba(255,107,91,.07)"><div class="tl-date" style="color:var(--danger)">Demissão</div><div class="tl-label" style="color:var(--danger)">${fmtD(demissao)}</div></div>
+    <div class="tl-seg" style="background:rgba(100,181,246,.07)"><div class="tl-date" style="color:var(--info)">Prazo pagamento</div><div class="tl-label" style="color:var(--info)">${fmtD(addDias(demissao,10))}</div></div>`;
+
+  // Resumo
+  el('r_resumo').innerHTML=`
+    <div class="resumo-card"><div class="resumo-num">${mesesTrab}</div><div class="resumo-lbl">meses trabalhados</div></div>
+    <div class="resumo-card"><div class="resumo-num">${anosComp}</div><div class="resumo-lbl">anos completos</div></div>
+    <div class="resumo-card"><div class="resumo-num">${meses13}</div><div class="resumo-lbl">avos de 13º</div></div>
+    <div class="resumo-card"><div class="resumo-num">${diasAviso}</div><div class="resumo-lbl">dias de aviso</div></div>`;
+
+  // Alertas topo
+  let rAl='';
+  if(tipo==='com_justa') rAl+=`<div class="alert-box al-danger"><span class="alert-icon">⚠</span><div><strong>Demissão por justa causa</strong> — o trabalhador perde: ${itensPerdidos.join(', ')} e saque do FGTS. Caso haja dúvida sobre a justa causa, pode ser contestada na Justiça do Trabalho.</div></div>`;
+  else if(tipo==='pedido') rAl+=`<div class="alert-box al-warn"><span class="alert-icon">!</span><div><strong>Pedido de demissão</strong> — o trabalhador <strong>não tem direito</strong> a: seguro-desemprego, multa de 40% do FGTS (saldo fica bloqueado).</div></div>`;
+  else if(tipo==='acordo') rAl+=`<div class="alert-box al-info"><span class="alert-icon">ℹ</span><div><strong>Acordo mútuo (art. 484-A CLT)</strong> — 13º e aviso prévio pagos pela metade; multa FGTS é de 20%; trabalhador pode sacar 80% do FGTS; tem direito ao seguro-desemprego com metade das parcelas.</div></div>`;
+  else rAl+=`<div class="alert-box al-ok"><span class="alert-icon">✓</span><div><strong>Demissão sem justa causa</strong> — trabalhador tem todos os direitos: verbas rescisórias completas, saque total do FGTS + multa de 40%, e seguro-desemprego.</div></div>`;
+  el('r_alertas').innerHTML=rAl;
+
+  // Items
+  el('r_items_rec').innerHTML=items.map(i=>`<div class="item-row"><div class="item-left"><div class="item-name">${i.n}</div><div class="item-desc">${i.d}</div></div><div class="item-val">${fmt(i.v)}</div></div>`).join('');
+
+  el('r_total_rec_val').textContent=fmt(totalBruto);
+
+  // Deduções
+  let dedH=`<div class="section-label">Deduções estimadas</div><div class="items-list">`;
+  dedH+=`<div class="item-row"><div class="item-left"><div class="item-name">INSS (tabela progressiva 2025)</div><div class="item-desc">Contribuição previdenciária sobre as verbas</div></div><div class="item-val neg">- ${fmt(inss)}</div></div>`;
+  if(ir>0) dedH+=`<div class="item-row"><div class="item-left"><div class="item-name">Imposto de Renda Retido</div><div class="item-desc">IR estimado sobre base de cálculo da rescisão</div></div><div class="item-val neg">- ${fmt(ir)}</div></div>`;
+  dedH+='</div>';
+  el('r_deducoes_block').innerHTML=dedH;
+
+  el('r_total_liq_val').textContent=fmt(totalLiq);
+
+  // FGTS block
+  let fgtsH=`<div class="section-label">FGTS — Fundo de Garantia</div>`;
+  fgtsH+=`<div class="alert-box al-info"><span class="alert-icon">🏦</span><div>`;
+  fgtsH+=`<strong>Saldo estimado na conta FGTS:</strong> ${fmt(vlFGTSAcum)}<br>`;
+  if(tipo==='sem_justa') fgtsH+=`<strong>Multa rescisória (40%):</strong> ${fmt(vlFGTSAcum*0.4)}<br><strong>Total disponível para saque:</strong> ${fmt(vlFGTSAcum+vlFGTSAcum*0.4)}<br>Trabalhador pode solicitar o saque na Caixa Econômica Federal.`;
+  else if(tipo==='acordo') fgtsH+=`<strong>Multa rescisória (20%):</strong> ${fmt(vlFGTSAcum*0.2)}<br>Trabalhador pode sacar 80% do saldo (${fmt(vlFGTSAcum*0.8)}).`;
+  else if(tipo==='pedido') fgtsH+=`O saldo (${fmt(vlFGTSAcum)}) fica <strong>bloqueado</strong>. Não há multa rescisória. Saque permitido apenas em situações especiais (compra de imóvel, aposentadoria, doença grave).`;
+  else if(tipo==='com_justa') fgtsH+=`O saldo (${fmt(vlFGTSAcum)}) fica <strong>bloqueado</strong>. Sem multa rescisória.`;
+  fgtsH+=`</div></div>`;
+  if(temSeguro || tipo==='acordo') {
+    const parcMin=tipo==='acordo'?'metade das parcelas normais':'de 3 a 5 parcelas';
+    fgtsH+=`<div class="alert-box al-ok"><span class="alert-icon">📋</span><div><strong>Seguro-Desemprego:</strong> Trabalhador tem direito. Solicitar no prazo de 7 a 120 dias após a demissão no app da Carteira de Trabalho Digital ou SINE. Valor: ${parcMin}.</div></div>`;
+  }
+  if(itensPerdidos.length && tipo!=='com_justa') {
+    fgtsH+=`<div class="alert-box al-warn"><span class="alert-icon">!</span><div>Direitos <strong>não incluídos</strong> neste tipo de rescisão: ${itensPerdidos.join(', ')}.</div></div>`;
+  }
+  el('r_fgts_block').innerHTML=fgtsH;
+
+  el('r_alertas2').innerHTML=`<div class="alert-box al-info"><span class="alert-icon">⏱</span><div>
+    <strong>Prazo para receber:</strong> Empresa tem <strong>10 dias corridos</strong> após a data de demissão para efetuar o pagamento (art. 477 CLT). Em caso de atraso, paga multa de 1 salário ao trabalhador.
+    <br><strong>Prazo estimado:</strong> até ${fmtD(addDias(demissao,10))}.
+  </div></div>`;
+
+  // WhatsApp rescisão
+  const msgR=`*Cálculo de Rescisão — ${tl}*\n`+
+    `*Data: ${fmtD(demissao)}*\n\n`+
+    `*Verbas a receber:*\n`+
+    items.map(i=>`• ${i.n}: ${fmt(i.v)}`).join('\n')+
+    `\n\n💰 *Total bruto: ${fmt(totalBruto)}*`+
+    `\n📉 Deduções (INSS+IR estimados): - ${fmt(inss+ir)}`+
+    `\n✅ *Líquido estimado: ${fmt(totalLiq)}*`+
+    `\n\n🏦 FGTS disponível: ${fmt(vlFGTSAcum)}${tipo==='sem_justa'?` + multa 40% = ${fmt(vlFGTSAcum*1.4)}`:''}`+
+    `\n⏱ Prazo de pagamento: até ${fmtD(addDias(demissao,10))}`;
+  el('r_wpp').href='https://wa.me/?text='+encodeURIComponent(msgR);
+
+  el('res-rescisao').classList.add('visible');
+  el('res-rescisao').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── RESET ──────────────────────────────────────────────────────────
+function resetar(tab) {
+  el('res-'+tab).classList.remove('visible');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── PWA ────────────────────────────────────────────────────────────
+let deferredPrompt=null, swReg=null;
+if('serviceWorker' in navigator){
+  window.addEventListener('load',async()=>{
+    try{
+      swReg=await navigator.serviceWorker.register('sw.js');
+      swReg.addEventListener('updatefound',()=>{
+        const nw=swReg.installing;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed'&&navigator.serviceWorker.controller) el('update-bar').classList.add('show');
+        });
+      });
+      navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
+    }catch(e){console.warn('[PWA]',e);}
+  });
+}
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e;
+  if(!window.matchMedia('(display-mode:standalone)').matches&&!sessionStorage.getItem('install-dismissed'))
+    setTimeout(()=>el('install-banner').classList.add('show'),3000);
+});
+el('btn-install-pwa').onclick=async()=>{
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  el('install-banner').classList.remove('show');
+};
+el('btn-dismiss-banner').onclick=()=>{
+  el('install-banner').classList.remove('show');
+  sessionStorage.setItem('install-dismissed','1');
+};
+el('btn-update').onclick=()=>{
+  if(swReg&&swReg.waiting) swReg.waiting.postMessage({type:'SKIP_WAITING'});
+};
+function updateOnline(){
+  el('offline-bar').classList.toggle('show',!navigator.onLine);
+}
+window.addEventListener('online',updateOnline);
+window.addEventListener('offline',updateOnline);
+updateOnline();
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+if(isIOS&&!window.navigator.standalone&&!sessionStorage.getItem('install-dismissed')){
+  el('install-sub-text').textContent='Toque em Compartilhar → Adicionar à Tela de Início';
+  setTimeout(()=>el('install-banner').classList.add('show'),3000);
+}
+</script>
+</body>
+</html>
