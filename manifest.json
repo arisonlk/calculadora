@@ -1,5 +1,5 @@
 {
-  "name": "Agente de Férias Trabalhistas",
+  "name": "Trabalhistas",
   "short_name": "Férias CLT",
   "description": "Calcule automaticamente os direitos e valores de férias trabalhistas conforme a CLT",
   "start_url": "/index.html",
